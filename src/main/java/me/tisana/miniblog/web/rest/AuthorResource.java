@@ -6,6 +6,8 @@ import me.tisana.miniblog.service.dto.AuthorDTO;
 
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.ResponseUtil;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +38,27 @@ public class AuthorResource {
 
     public AuthorResource(AuthorService authorService) {
         this.authorService = authorService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<AuthorDTO> regsiter(@RequestBody AuthorDTO authorDTO) throws URISyntaxException {
+        log.debug("REST request to save Author : {}", authorDTO);
+        if (authorDTO.getId() != null) {
+            throw new BadRequestAlertException("A new author cannot already have an ID", ENTITY_NAME, "idexists");
+        }
+
+        if (StringUtils.isEmpty(authorDTO.getUsername())) {
+            throw new BadRequestAlertException("Author name cannot be blank", ENTITY_NAME, "duplicate_name");
+        }
+
+        if(StringUtils.isEmpty(authorDTO.getPassword())) {
+            authorDTO.setPassword(RandomStringUtils.random(12, authorDTO.getUsername()));
+        }
+
+        AuthorDTO result = authorService.save(authorDTO);
+        return ResponseEntity.created(new URI("/api/authors/" + result.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
+            .body(result);
     }
 
     /**
