@@ -44,6 +44,8 @@ public class CacheConfiguration {
     public JCacheManagerCustomizer cacheManagerCustomizer() {
         return cm -> {
             createCache(cm, me.tisana.miniblog.domain.Author.class.getName());
+            createCache(cm, me.tisana.miniblog.domain.Card.class.getName());
+            createCache(cm, me.tisana.miniblog.domain.Category.class.getName());
             // jhipster-needle-ehcache-add-entry
         };
     }
