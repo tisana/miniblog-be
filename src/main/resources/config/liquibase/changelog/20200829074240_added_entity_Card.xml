@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <databaseChangeLog
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.9.xsd
-                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.9.xsd">
 
-    
+
     <!--
         Added the entity Card.
     -->
@@ -16,19 +14,19 @@
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="varchar(255)">
-                <constraints nullable="false" />
+                <constraints nullable="false"/>
             </column>
             <column name="status" type="varchar(255)">
-                <constraints nullable="true" />
+                <constraints nullable="true"/>
             </column>
-            <column name="content" type="varchar(255)">
-                <constraints nullable="true" />
+            <column name="content" type="varchar">
+                <constraints nullable="true"/>
             </column>
             <column name="author_id" type="bigint">
-                <constraints nullable="true" />
+                <constraints nullable="true"/>
             </column>
             <column name="category_id" type="bigint">
-                <constraints nullable="true" />
+                <constraints nullable="true"/>
             </column>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here -->
         </createTable>
@@ -49,15 +47,38 @@
     -->
     <changeSet id="20200829074240-1-data" author="jhipster" context="faker">
         <loadData
-                  file="config/liquibase/fake-data/card.csv"
-                  separator=";"
-                  tableName="card">
+            file="config/liquibase/fake-data/card.csv"
+            separator=";"
+            tableName="card">
             <column name="id" type="numeric"/>
             <column name="name" type="string"/>
             <column name="status" type="string"/>
             <column name="content" type="string"/>
             <!-- jhipster-needle-liquibase-add-loadcolumn - JHipster (and/or extensions) can add load columns here -->
         </loadData>
+    </changeSet>
+
+    <changeSet id="20200829074240-2-data" author="tisana" context="faker">
+        <update tableName="card">
+            <column name="author_id" value="1"/>
+            <column name="category_id" value="1"/>
+            <where>id in (1,2,3)</where>
+        </update>
+        <update tableName="card">
+            <column name="author_id" value="2"/>
+            <column name="category_id" value="2"/>
+            <where>id in (4,5,6)</where>
+        </update>
+        <update tableName="card">
+            <column name="author_id" value="3"/>
+            <column name="category_id" value="3"/>
+            <where>id in (7,8,9)</where>
+        </update>
+        <update tableName="card">
+            <column name="author_id" value="4"/>
+            <column name="category_id" value="5"/>
+            <where>id = 10</where>
+        </update>
     </changeSet>
 
 </databaseChangeLog>
