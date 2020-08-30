@@ -1,14 +1,15 @@
 package me.tisana.miniblog.service.dto;
 
-import javax.validation.constraints.*;
-import java.io.Serializable;
 import me.tisana.miniblog.domain.enumeration.Status;
+
+import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 
 /**
  * A DTO for the {@link me.tisana.miniblog.domain.Card} entity.
  */
 public class CardDTO implements Serializable {
-    
+
     private Long id;
 
     @NotNull
@@ -23,10 +24,12 @@ public class CardDTO implements Serializable {
 
     private String authorUsername;
 
+    private String authorPassword;
+
     private Long categoryId;
 
     private String categoryName;
-    
+
     public Long getId() {
         return id;
     }
@@ -89,6 +92,14 @@ public class CardDTO implements Serializable {
 
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public String getAuthorPassword() {
+        return authorPassword;
+    }
+
+    public void setAuthorPassword(String authorPassword) {
+        this.authorPassword = authorPassword;
     }
 
     @Override

@@ -1,11 +1,10 @@
 package me.tisana.miniblog.web.rest;
 
-import me.tisana.miniblog.service.AuthorService;
-import me.tisana.miniblog.web.rest.errors.BadRequestAlertException;
-import me.tisana.miniblog.service.dto.AuthorDTO;
-
 import io.github.jhipster.web.util.HeaderUtil;
 import io.github.jhipster.web.util.ResponseUtil;
+import me.tisana.miniblog.service.AuthorService;
+import me.tisana.miniblog.service.dto.AuthorDTO;
+import me.tisana.miniblog.web.rest.errors.BadRequestAlertException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

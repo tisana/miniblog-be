@@ -6,7 +6,6 @@ import me.tisana.miniblog.service.dto.AuthorDTO;
 import me.tisana.miniblog.service.mapper.AuthorMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,6 +70,18 @@ public class AuthorService {
         log.debug("Request to get Author : {}", id);
         return authorRepository.findById(id)
             .map(authorMapper::toDto);
+    }
+
+    /**
+     * Get one author by username.
+     *
+     * @param username the username of the entity.
+     * @return the entity.
+     */
+    @Transactional(readOnly = true)
+    public Author findOneByUsername(String username) {
+        log.debug("Request to get Author : {}", username);
+        return authorRepository.findOneByUsername(username);
     }
 
     /**

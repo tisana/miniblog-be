@@ -1,12 +1,15 @@
 package me.tisana.miniblog.service;
 
+import me.tisana.miniblog.domain.Author;
 import me.tisana.miniblog.domain.Card;
+import me.tisana.miniblog.repository.AuthorRepository;
 import me.tisana.miniblog.repository.CardRepository;
 import me.tisana.miniblog.service.dto.CardDTO;
 import me.tisana.miniblog.service.mapper.CardMapper;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,11 +27,13 @@ public class CardService {
     private final Logger log = LoggerFactory.getLogger(CardService.class);
 
     private final CardRepository cardRepository;
+    private final AuthorRepository authorRepository;
 
     private final CardMapper cardMapper;
 
-    public CardService(CardRepository cardRepository, CardMapper cardMapper) {
+    public CardService(CardRepository cardRepository, AuthorRepository authorRepository, CardMapper cardMapper) {
         this.cardRepository = cardRepository;
+        this.authorRepository = authorRepository;
         this.cardMapper = cardMapper;
     }
 
@@ -40,6 +45,21 @@ public class CardService {
      */
     public CardDTO save(CardDTO cardDTO) {
         log.debug("Request to save Card : {}", cardDTO);
+
+        //If user id does not exist, check against db with username
+        if (StringUtils.isNotEmpty(cardDTO.getAuthorUsername()) && cardDTO.getAuthorId() == null) {
+            Author author = authorRepository.findOneByUsername(cardDTO.getAuthorUsername());
+            if (author == null) {
+                //create new author
+                author = new Author();
+                author.setUsername(cardDTO.getAuthorUsername());
+                author.setPassword(RandomStringUtils.random(12, cardDTO.getAuthorUsername()));
+                author = authorRepository.save(author);
+            }
+            cardDTO.setAuthorId(author.getId());
+
+        }
+
         Card card = cardMapper.toEntity(cardDTO);
         card = cardRepository.save(card);
         return cardMapper.toDto(card);
