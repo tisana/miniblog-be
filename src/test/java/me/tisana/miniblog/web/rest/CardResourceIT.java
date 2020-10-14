@@ -1,12 +1,14 @@
 package me.tisana.miniblog.web.rest;
 
 import me.tisana.miniblog.MiniBlogApp;
+import me.tisana.miniblog.domain.Author;
 import me.tisana.miniblog.domain.Card;
+import me.tisana.miniblog.domain.enumeration.Status;
+import me.tisana.miniblog.repository.AuthorRepository;
 import me.tisana.miniblog.repository.CardRepository;
 import me.tisana.miniblog.service.CardService;
 import me.tisana.miniblog.service.dto.CardDTO;
 import me.tisana.miniblog.service.mapper.CardMapper;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
 import javax.persistence.EntityManager;
 import java.util.List;
 
@@ -24,7 +27,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import me.tisana.miniblog.domain.enumeration.Status;
 /**
  * Integration tests for the {@link CardResource} REST controller.
  */
@@ -46,6 +48,9 @@ public class CardResourceIT {
     private CardRepository cardRepository;
 
     @Autowired
+    private AuthorRepository authorRepository;
+
+    @Autowired
     private CardMapper cardMapper;
 
     @Autowired
@@ -59,9 +64,11 @@ public class CardResourceIT {
 
     private Card card;
 
+    private Author author;
+
     /**
      * Create an entity for this test.
-     *
+     * <p>
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
@@ -89,6 +96,7 @@ public class CardResourceIT {
     @BeforeEach
     public void initTest() {
         card = createEntity(em);
+        author = AuthorResourceIT.createEntity(em);
     }
 
     @Test
@@ -97,6 +105,7 @@ public class CardResourceIT {
         int databaseSizeBeforeCreate = cardRepository.findAll().size();
         // Create the Card
         CardDTO cardDTO = cardMapper.toDto(card);
+        cardDTO.setAuthorUsername(author.getUsername());
         restCardMockMvc.perform(post("/api/cards")
             .contentType(MediaType.APPLICATION_JSON)
             .content(TestUtil.convertObjectToJsonBytes(cardDTO)))
@@ -167,7 +176,7 @@ public class CardResourceIT {
             .andExpect(jsonPath("$.[*].status").value(hasItem(DEFAULT_STATUS.toString())))
             .andExpect(jsonPath("$.[*].content").value(hasItem(DEFAULT_CONTENT)));
     }
-    
+
     @Test
     @Transactional
     public void getCard() throws Exception {
@@ -196,6 +205,7 @@ public class CardResourceIT {
     public void updateCard() throws Exception {
         // Initialize the database
         cardRepository.saveAndFlush(card);
+        authorRepository.saveAndFlush(author);
 
         int databaseSizeBeforeUpdate = cardRepository.findAll().size();
 
@@ -208,6 +218,8 @@ public class CardResourceIT {
             .status(UPDATED_STATUS)
             .content(UPDATED_CONTENT);
         CardDTO cardDTO = cardMapper.toDto(updatedCard);
+        cardDTO.setAuthorUsername(author.getUsername());
+        cardDTO.setAuthorPassword(author.getPassword());
 
         restCardMockMvc.perform(put("/api/cards")
             .contentType(MediaType.APPLICATION_JSON)
@@ -247,11 +259,14 @@ public class CardResourceIT {
     public void deleteCard() throws Exception {
         // Initialize the database
         cardRepository.saveAndFlush(card);
+        authorRepository.saveAndFlush(author);
 
         int databaseSizeBeforeDelete = cardRepository.findAll().size();
 
         // Delete the card
         restCardMockMvc.perform(delete("/api/cards/{id}", card.getId())
+            .param("authorUsername", author.getUsername())
+            .param("password", author.getPassword())
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 
