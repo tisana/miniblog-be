@@ -4,7 +4,7 @@
       "packageName": "me.tisana.miniblog",
       "nativeLanguage": "en"
     },
-    "jhipsterVersion": "6.10.1",
+    "jhipsterVersion": "6.10.5",
     "applicationType": "microservice",
     "baseName": "miniBlog",
     "packageName": "me.tisana.miniblog",
