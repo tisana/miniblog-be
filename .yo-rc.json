@@ -1,0 +1,42 @@
+{
+  "generator-jhipster": {
+    "promptValues": {
+      "packageName": "me.tisana.miniblog",
+      "nativeLanguage": "en"
+    },
+    "jhipsterVersion": "6.10.1",
+    "applicationType": "microservice",
+    "baseName": "miniBlog",
+    "packageName": "me.tisana.miniblog",
+    "packageFolder": "me/tisana/miniblog",
+    "serverPort": "8081",
+    "authenticationType": "jwt",
+    "cacheProvider": "ehcache",
+    "enableHibernateCache": true,
+    "websocket": false,
+    "databaseType": "sql",
+    "devDatabaseType": "postgresql",
+    "prodDatabaseType": "postgresql",
+    "searchEngine": false,
+    "messageBroker": false,
+    "serviceDiscoveryType": false,
+    "buildTool": "maven",
+    "enableSwaggerCodegen": false,
+    "jwtSecretKey": "MDQ1ZDE0NWExNjdhMmMyZTZmMzkzNGJkOWM3ZjdjYTk0ODE0OThkYjZlOTQ5MzBiODE4NjEwMGFiN2JjMTRjZGMyMDNkODFkZGVkYzY5NGI2NjYxZWFlMDc5MThiOTM3MzhlODlhOGJmYWY4Zjc5ODcwZWFlZjg1NTlkMjMzMDY=",
+    "embeddableLaunchScript": false,
+    "creationTimestamp": 1598684786540,
+    "testFrameworks": [],
+    "jhiPrefix": "jhi",
+    "entitySuffix": "",
+    "dtoSuffix": "DTO",
+    "otherModules": [],
+    "enableTranslation": true,
+    "clientPackageManager": "npm",
+    "nativeLanguage": "en",
+    "languages": ["en", "th"],
+    "blueprints": [],
+    "skipClient": true,
+    "skipUserManagement": true,
+    "lastLiquibaseTimestamp": 1598687597000
+  }
+}
