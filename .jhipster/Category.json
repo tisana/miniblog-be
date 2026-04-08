@@ -11,12 +11,16 @@
   ],
   "changelogDate": "20200829075317",
   "dto": "mapstruct",
-  "searchEngine": false,
+  "searchEngine": "no",
   "service": "serviceClass",
   "entityTableName": "category",
   "databaseType": "sql",
   "readOnly": false,
   "jpaMetamodelFiltering": false,
   "pagination": "no",
-  "microserviceName": "miniBlog"
+  "microserviceName": "miniBlog",
+  "annotations": {
+    "changelogDate": "20200829075317"
+  },
+  "name": "Category"
 }

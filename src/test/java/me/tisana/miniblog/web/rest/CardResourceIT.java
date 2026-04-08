@@ -1,39 +1,48 @@
 package me.tisana.miniblog.web.rest;
 
-import me.tisana.miniblog.MiniBlogApp;
-import me.tisana.miniblog.domain.Author;
+import static me.tisana.miniblog.domain.CardAsserts.*;
+import static me.tisana.miniblog.web.rest.TestUtil.createUpdateProxyForBean;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
+import me.tisana.miniblog.IntegrationTest;
 import me.tisana.miniblog.domain.Card;
 import me.tisana.miniblog.domain.enumeration.Status;
-import me.tisana.miniblog.repository.AuthorRepository;
 import me.tisana.miniblog.repository.CardRepository;
 import me.tisana.miniblog.service.CardService;
 import me.tisana.miniblog.service.dto.CardDTO;
 import me.tisana.miniblog.service.mapper.CardMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 /**
  * Integration tests for the {@link CardResource} REST controller.
  */
-@SpringBootTest(classes = MiniBlogApp.class)
+@IntegrationTest
+@ExtendWith(MockitoExtension.class)
 @AutoConfigureMockMvc
 @WithMockUser
-public class CardResourceIT {
+class CardResourceIT {
 
     private static final String DEFAULT_NAME = "AAAAAAAAAA";
     private static final String UPDATED_NAME = "BBBBBBBBBB";
@@ -44,17 +53,26 @@ public class CardResourceIT {
     private static final String DEFAULT_CONTENT = "AAAAAAAAAA";
     private static final String UPDATED_CONTENT = "BBBBBBBBBB";
 
+    private static final String ENTITY_API_URL = "/api/cards";
+    private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
+
+    private static Random random = new Random();
+    private static AtomicLong longCount = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
+
+    @Autowired
+    private ObjectMapper om;
+
     @Autowired
     private CardRepository cardRepository;
 
-    @Autowired
-    private AuthorRepository authorRepository;
+    @Mock
+    private CardRepository cardRepositoryMock;
 
     @Autowired
     private CardMapper cardMapper;
 
-    @Autowired
-    private CardService cardService;
+    @Mock
+    private CardService cardServiceMock;
 
     @Autowired
     private EntityManager em;
@@ -64,111 +82,109 @@ public class CardResourceIT {
 
     private Card card;
 
-    private Author author;
+    private Card insertedCard;
 
     /**
      * Create an entity for this test.
-     * <p>
+     *
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Card createEntity(EntityManager em) {
-        Card card = new Card()
-            .name(DEFAULT_NAME)
-            .status(DEFAULT_STATUS)
-            .content(DEFAULT_CONTENT);
-        return card;
+    public static Card createEntity() {
+        return new Card().name(DEFAULT_NAME).status(DEFAULT_STATUS).content(DEFAULT_CONTENT);
     }
+
     /**
      * Create an updated entity for this test.
      *
      * This is a static method, as tests for other entities might also need it,
      * if they test an entity which requires the current entity.
      */
-    public static Card createUpdatedEntity(EntityManager em) {
-        Card card = new Card()
-            .name(UPDATED_NAME)
-            .status(UPDATED_STATUS)
-            .content(UPDATED_CONTENT);
-        return card;
+    public static Card createUpdatedEntity() {
+        return new Card().name(UPDATED_NAME).status(UPDATED_STATUS).content(UPDATED_CONTENT);
     }
 
     @BeforeEach
-    public void initTest() {
-        card = createEntity(em);
-        author = AuthorResourceIT.createEntity(em);
+    void initTest() {
+        card = createEntity();
+    }
+
+    @AfterEach
+    void cleanup() {
+        if (insertedCard != null) {
+            cardRepository.delete(insertedCard);
+            insertedCard = null;
+        }
     }
 
     @Test
     @Transactional
-    public void createCard() throws Exception {
-        int databaseSizeBeforeCreate = cardRepository.findAll().size();
+    void createCard() throws Exception {
+        long databaseSizeBeforeCreate = getRepositoryCount();
         // Create the Card
         CardDTO cardDTO = cardMapper.toDto(card);
-        cardDTO.setAuthorUsername(author.getUsername());
-        restCardMockMvc.perform(post("/api/cards")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(TestUtil.convertObjectToJsonBytes(cardDTO)))
-            .andExpect(status().isCreated());
+        var returnedCardDTO = om.readValue(
+            restCardMockMvc
+                .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(cardDTO)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString(),
+            CardDTO.class
+        );
 
         // Validate the Card in the database
-        List<Card> cardList = cardRepository.findAll();
-        assertThat(cardList).hasSize(databaseSizeBeforeCreate + 1);
-        Card testCard = cardList.get(cardList.size() - 1);
-        assertThat(testCard.getName()).isEqualTo(DEFAULT_NAME);
-        assertThat(testCard.getStatus()).isEqualTo(DEFAULT_STATUS);
-        assertThat(testCard.getContent()).isEqualTo(DEFAULT_CONTENT);
+        assertIncrementedRepositoryCount(databaseSizeBeforeCreate);
+        var returnedCard = cardMapper.toEntity(returnedCardDTO);
+        assertCardUpdatableFieldsEquals(returnedCard, getPersistedCard(returnedCard));
+
+        insertedCard = returnedCard;
     }
 
     @Test
     @Transactional
-    public void createCardWithExistingId() throws Exception {
-        int databaseSizeBeforeCreate = cardRepository.findAll().size();
-
+    void createCardWithExistingId() throws Exception {
         // Create the Card with an existing ID
         card.setId(1L);
         CardDTO cardDTO = cardMapper.toDto(card);
 
+        long databaseSizeBeforeCreate = getRepositoryCount();
+
         // An entity with an existing ID cannot be created, so this API call must fail
-        restCardMockMvc.perform(post("/api/cards")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(TestUtil.convertObjectToJsonBytes(cardDTO)))
+        restCardMockMvc
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(cardDTO)))
             .andExpect(status().isBadRequest());
 
         // Validate the Card in the database
-        List<Card> cardList = cardRepository.findAll();
-        assertThat(cardList).hasSize(databaseSizeBeforeCreate);
+        assertSameRepositoryCount(databaseSizeBeforeCreate);
     }
-
 
     @Test
     @Transactional
-    public void checkNameIsRequired() throws Exception {
-        int databaseSizeBeforeTest = cardRepository.findAll().size();
+    void checkNameIsRequired() throws Exception {
+        long databaseSizeBeforeTest = getRepositoryCount();
         // set the field null
         card.setName(null);
 
         // Create the Card, which fails.
         CardDTO cardDTO = cardMapper.toDto(card);
 
-
-        restCardMockMvc.perform(post("/api/cards")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(TestUtil.convertObjectToJsonBytes(cardDTO)))
+        restCardMockMvc
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(cardDTO)))
             .andExpect(status().isBadRequest());
 
-        List<Card> cardList = cardRepository.findAll();
-        assertThat(cardList).hasSize(databaseSizeBeforeTest);
+        assertSameRepositoryCount(databaseSizeBeforeTest);
     }
 
     @Test
     @Transactional
-    public void getAllCards() throws Exception {
+    void getAllCards() throws Exception {
         // Initialize the database
-        cardRepository.saveAndFlush(card);
+        insertedCard = cardRepository.saveAndFlush(card);
 
         // Get all the cardList
-        restCardMockMvc.perform(get("/api/cards?sort=id,desc"))
+        restCardMockMvc
+            .perform(get(ENTITY_API_URL + "?sort=id,desc"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(card.getId().intValue())))
@@ -177,14 +193,32 @@ public class CardResourceIT {
             .andExpect(jsonPath("$.[*].content").value(hasItem(DEFAULT_CONTENT)));
     }
 
+    @SuppressWarnings({ "unchecked" })
+    void getAllCardsWithEagerRelationshipsIsEnabled() throws Exception {
+        when(cardServiceMock.findAllWithEagerRelationships(any())).thenReturn(new PageImpl(new ArrayList<>()));
+
+        restCardMockMvc.perform(get(ENTITY_API_URL + "?eagerload=true")).andExpect(status().isOk());
+
+        verify(cardServiceMock, times(1)).findAllWithEagerRelationships(any());
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    void getAllCardsWithEagerRelationshipsIsNotEnabled() throws Exception {
+        when(cardServiceMock.findAllWithEagerRelationships(any())).thenReturn(new PageImpl(new ArrayList<>()));
+
+        restCardMockMvc.perform(get(ENTITY_API_URL + "?eagerload=false")).andExpect(status().isOk());
+        verify(cardRepositoryMock, times(1)).findAll(any(Pageable.class));
+    }
+
     @Test
     @Transactional
-    public void getCard() throws Exception {
+    void getCard() throws Exception {
         // Initialize the database
-        cardRepository.saveAndFlush(card);
+        insertedCard = cardRepository.saveAndFlush(card);
 
         // Get the card
-        restCardMockMvc.perform(get("/api/cards/{id}", card.getId()))
+        restCardMockMvc
+            .perform(get(ENTITY_API_URL_ID, card.getId()))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.id").value(card.getId().intValue()))
@@ -192,86 +226,252 @@ public class CardResourceIT {
             .andExpect(jsonPath("$.status").value(DEFAULT_STATUS.toString()))
             .andExpect(jsonPath("$.content").value(DEFAULT_CONTENT));
     }
+
     @Test
     @Transactional
-    public void getNonExistingCard() throws Exception {
+    void getNonExistingCard() throws Exception {
         // Get the card
-        restCardMockMvc.perform(get("/api/cards/{id}", Long.MAX_VALUE))
-            .andExpect(status().isNotFound());
+        restCardMockMvc.perform(get(ENTITY_API_URL_ID, Long.MAX_VALUE)).andExpect(status().isNotFound());
     }
 
     @Test
     @Transactional
-    public void updateCard() throws Exception {
+    void putExistingCard() throws Exception {
         // Initialize the database
-        cardRepository.saveAndFlush(card);
-        authorRepository.saveAndFlush(author);
+        insertedCard = cardRepository.saveAndFlush(card);
 
-        int databaseSizeBeforeUpdate = cardRepository.findAll().size();
+        long databaseSizeBeforeUpdate = getRepositoryCount();
 
         // Update the card
-        Card updatedCard = cardRepository.findById(card.getId()).get();
+        Card updatedCard = cardRepository.findById(card.getId()).orElseThrow();
         // Disconnect from session so that the updates on updatedCard are not directly saved in db
         em.detach(updatedCard);
-        updatedCard
-            .name(UPDATED_NAME)
-            .status(UPDATED_STATUS)
-            .content(UPDATED_CONTENT);
+        updatedCard.name(UPDATED_NAME).status(UPDATED_STATUS).content(UPDATED_CONTENT);
         CardDTO cardDTO = cardMapper.toDto(updatedCard);
-        cardDTO.setAuthorUsername(author.getUsername());
-        cardDTO.setAuthorPassword(author.getPassword());
 
-        restCardMockMvc.perform(put("/api/cards")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(TestUtil.convertObjectToJsonBytes(cardDTO)))
+        restCardMockMvc
+            .perform(put(ENTITY_API_URL_ID, cardDTO.getId()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(cardDTO)))
             .andExpect(status().isOk());
 
         // Validate the Card in the database
-        List<Card> cardList = cardRepository.findAll();
-        assertThat(cardList).hasSize(databaseSizeBeforeUpdate);
-        Card testCard = cardList.get(cardList.size() - 1);
-        assertThat(testCard.getName()).isEqualTo(UPDATED_NAME);
-        assertThat(testCard.getStatus()).isEqualTo(UPDATED_STATUS);
-        assertThat(testCard.getContent()).isEqualTo(UPDATED_CONTENT);
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertPersistedCardToMatchAllProperties(updatedCard);
     }
 
     @Test
     @Transactional
-    public void updateNonExistingCard() throws Exception {
-        int databaseSizeBeforeUpdate = cardRepository.findAll().size();
+    void putNonExistingCard() throws Exception {
+        long databaseSizeBeforeUpdate = getRepositoryCount();
+        card.setId(longCount.incrementAndGet());
 
         // Create the Card
         CardDTO cardDTO = cardMapper.toDto(card);
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        restCardMockMvc.perform(put("/api/cards")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(TestUtil.convertObjectToJsonBytes(cardDTO)))
+        restCardMockMvc
+            .perform(put(ENTITY_API_URL_ID, cardDTO.getId()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(cardDTO)))
             .andExpect(status().isBadRequest());
 
         // Validate the Card in the database
-        List<Card> cardList = cardRepository.findAll();
-        assertThat(cardList).hasSize(databaseSizeBeforeUpdate);
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
     }
 
     @Test
     @Transactional
-    public void deleteCard() throws Exception {
-        // Initialize the database
-        cardRepository.saveAndFlush(card);
-        authorRepository.saveAndFlush(author);
+    void putWithIdMismatchCard() throws Exception {
+        long databaseSizeBeforeUpdate = getRepositoryCount();
+        card.setId(longCount.incrementAndGet());
 
-        int databaseSizeBeforeDelete = cardRepository.findAll().size();
+        // Create the Card
+        CardDTO cardDTO = cardMapper.toDto(card);
+
+        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
+        restCardMockMvc
+            .perform(
+                put(ENTITY_API_URL_ID, longCount.incrementAndGet())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(om.writeValueAsBytes(cardDTO))
+            )
+            .andExpect(status().isBadRequest());
+
+        // Validate the Card in the database
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    void putWithMissingIdPathParamCard() throws Exception {
+        long databaseSizeBeforeUpdate = getRepositoryCount();
+        card.setId(longCount.incrementAndGet());
+
+        // Create the Card
+        CardDTO cardDTO = cardMapper.toDto(card);
+
+        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
+        restCardMockMvc
+            .perform(put(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(cardDTO)))
+            .andExpect(status().isMethodNotAllowed());
+
+        // Validate the Card in the database
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    void partialUpdateCardWithPatch() throws Exception {
+        // Initialize the database
+        insertedCard = cardRepository.saveAndFlush(card);
+
+        long databaseSizeBeforeUpdate = getRepositoryCount();
+
+        // Update the card using partial update
+        Card partialUpdatedCard = new Card();
+        partialUpdatedCard.setId(card.getId());
+
+        restCardMockMvc
+            .perform(
+                patch(ENTITY_API_URL_ID, partialUpdatedCard.getId())
+                    .contentType("application/merge-patch+json")
+                    .content(om.writeValueAsBytes(partialUpdatedCard))
+            )
+            .andExpect(status().isOk());
+
+        // Validate the Card in the database
+
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertCardUpdatableFieldsEquals(createUpdateProxyForBean(partialUpdatedCard, card), getPersistedCard(card));
+    }
+
+    @Test
+    @Transactional
+    void fullUpdateCardWithPatch() throws Exception {
+        // Initialize the database
+        insertedCard = cardRepository.saveAndFlush(card);
+
+        long databaseSizeBeforeUpdate = getRepositoryCount();
+
+        // Update the card using partial update
+        Card partialUpdatedCard = new Card();
+        partialUpdatedCard.setId(card.getId());
+
+        partialUpdatedCard.name(UPDATED_NAME).status(UPDATED_STATUS).content(UPDATED_CONTENT);
+
+        restCardMockMvc
+            .perform(
+                patch(ENTITY_API_URL_ID, partialUpdatedCard.getId())
+                    .contentType("application/merge-patch+json")
+                    .content(om.writeValueAsBytes(partialUpdatedCard))
+            )
+            .andExpect(status().isOk());
+
+        // Validate the Card in the database
+
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+        assertCardUpdatableFieldsEquals(partialUpdatedCard, getPersistedCard(partialUpdatedCard));
+    }
+
+    @Test
+    @Transactional
+    void patchNonExistingCard() throws Exception {
+        long databaseSizeBeforeUpdate = getRepositoryCount();
+        card.setId(longCount.incrementAndGet());
+
+        // Create the Card
+        CardDTO cardDTO = cardMapper.toDto(card);
+
+        // If the entity doesn't have an ID, it will throw BadRequestAlertException
+        restCardMockMvc
+            .perform(
+                patch(ENTITY_API_URL_ID, cardDTO.getId()).contentType("application/merge-patch+json").content(om.writeValueAsBytes(cardDTO))
+            )
+            .andExpect(status().isBadRequest());
+
+        // Validate the Card in the database
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    void patchWithIdMismatchCard() throws Exception {
+        long databaseSizeBeforeUpdate = getRepositoryCount();
+        card.setId(longCount.incrementAndGet());
+
+        // Create the Card
+        CardDTO cardDTO = cardMapper.toDto(card);
+
+        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
+        restCardMockMvc
+            .perform(
+                patch(ENTITY_API_URL_ID, longCount.incrementAndGet())
+                    .contentType("application/merge-patch+json")
+                    .content(om.writeValueAsBytes(cardDTO))
+            )
+            .andExpect(status().isBadRequest());
+
+        // Validate the Card in the database
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    void patchWithMissingIdPathParamCard() throws Exception {
+        long databaseSizeBeforeUpdate = getRepositoryCount();
+        card.setId(longCount.incrementAndGet());
+
+        // Create the Card
+        CardDTO cardDTO = cardMapper.toDto(card);
+
+        // If url ID doesn't match entity ID, it will throw BadRequestAlertException
+        restCardMockMvc
+            .perform(patch(ENTITY_API_URL).contentType("application/merge-patch+json").content(om.writeValueAsBytes(cardDTO)))
+            .andExpect(status().isMethodNotAllowed());
+
+        // Validate the Card in the database
+        assertSameRepositoryCount(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    void deleteCard() throws Exception {
+        // Initialize the database
+        insertedCard = cardRepository.saveAndFlush(card);
+
+        long databaseSizeBeforeDelete = getRepositoryCount();
 
         // Delete the card
-        restCardMockMvc.perform(delete("/api/cards/{id}", card.getId())
-            .param("authorUsername", author.getUsername())
-            .param("password", author.getPassword())
-            .accept(MediaType.APPLICATION_JSON))
+        restCardMockMvc
+            .perform(delete(ENTITY_API_URL_ID, card.getId()).accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isNoContent());
 
         // Validate the database contains one less item
-        List<Card> cardList = cardRepository.findAll();
-        assertThat(cardList).hasSize(databaseSizeBeforeDelete - 1);
+        assertDecrementedRepositoryCount(databaseSizeBeforeDelete);
+    }
+
+    protected long getRepositoryCount() {
+        return cardRepository.count();
+    }
+
+    protected void assertIncrementedRepositoryCount(long countBefore) {
+        assertThat(countBefore + 1).isEqualTo(getRepositoryCount());
+    }
+
+    protected void assertDecrementedRepositoryCount(long countBefore) {
+        assertThat(countBefore - 1).isEqualTo(getRepositoryCount());
+    }
+
+    protected void assertSameRepositoryCount(long countBefore) {
+        assertThat(countBefore).isEqualTo(getRepositoryCount());
+    }
+
+    protected Card getPersistedCard(Card card) {
+        return cardRepository.findById(card.getId()).orElseThrow();
+    }
+
+    protected void assertPersistedCardToMatchAllProperties(Card expectedCard) {
+        assertCardAllPropertiesEquals(expectedCard, getPersistedCard(expectedCard));
+    }
+
+    protected void assertPersistedCardToMatchUpdatableProperties(Card expectedCard) {
+        assertCardAllUpdatablePropertiesEquals(expectedCard, getPersistedCard(expectedCard));
     }
 }

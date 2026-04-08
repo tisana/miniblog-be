@@ -1,13 +1,14 @@
 package me.tisana.miniblog.service.dto;
 
-import me.tisana.miniblog.domain.enumeration.Status;
-
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import java.io.Serializable;
+import java.util.Objects;
+import me.tisana.miniblog.domain.enumeration.Status;
 
 /**
  * A DTO for the {@link me.tisana.miniblog.domain.Card} entity.
  */
+@SuppressWarnings("common-java:DuplicatedBlocks")
 public class CardDTO implements Serializable {
 
     private Long id;
@@ -19,16 +20,9 @@ public class CardDTO implements Serializable {
 
     private String content;
 
+    private AuthorDTO author;
 
-    private Long authorId;
-
-    private String authorUsername;
-
-    private String authorPassword;
-
-    private Long categoryId;
-
-    private String categoryName;
+    private CategoryDTO category;
 
     public Long getId() {
         return id;
@@ -62,44 +56,20 @@ public class CardDTO implements Serializable {
         this.content = content;
     }
 
-    public Long getAuthorId() {
-        return authorId;
+    public AuthorDTO getAuthor() {
+        return author;
     }
 
-    public void setAuthorId(Long authorId) {
-        this.authorId = authorId;
+    public void setAuthor(AuthorDTO author) {
+        this.author = author;
     }
 
-    public String getAuthorUsername() {
-        return authorUsername;
+    public CategoryDTO getCategory() {
+        return category;
     }
 
-    public void setAuthorUsername(String authorUsername) {
-        this.authorUsername = authorUsername;
-    }
-
-    public Long getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(Long categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
-    }
-
-    public String getAuthorPassword() {
-        return authorPassword;
-    }
-
-    public void setAuthorPassword(String authorPassword) {
-        this.authorPassword = authorPassword;
+    public void setCategory(CategoryDTO category) {
+        this.category = category;
     }
 
     @Override
@@ -111,12 +81,16 @@ public class CardDTO implements Serializable {
             return false;
         }
 
-        return id != null && id.equals(((CardDTO) o).id);
+        CardDTO cardDTO = (CardDTO) o;
+        if (this.id == null) {
+            return false;
+        }
+        return Objects.equals(this.id, cardDTO.id);
     }
 
     @Override
     public int hashCode() {
-        return 31;
+        return Objects.hash(this.id);
     }
 
     // prettier-ignore
@@ -127,10 +101,8 @@ public class CardDTO implements Serializable {
             ", name='" + getName() + "'" +
             ", status='" + getStatus() + "'" +
             ", content='" + getContent() + "'" +
-            ", authorId=" + getAuthorId() +
-            ", authorUsername='" + getAuthorUsername() + "'" +
-            ", categoryId=" + getCategoryId() +
-            ", categoryName='" + getCategoryName() + "'" +
+            ", author=" + getAuthor() +
+            ", category=" + getCategory() +
             "}";
     }
 }

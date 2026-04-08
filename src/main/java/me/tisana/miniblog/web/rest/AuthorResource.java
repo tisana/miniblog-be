@@ -1,32 +1,32 @@
 package me.tisana.miniblog.web.rest;
 
-import io.github.jhipster.web.util.HeaderUtil;
-import io.github.jhipster.web.util.ResponseUtil;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import me.tisana.miniblog.repository.AuthorRepository;
 import me.tisana.miniblog.service.AuthorService;
 import me.tisana.miniblog.service.dto.AuthorDTO;
 import me.tisana.miniblog.web.rest.errors.BadRequestAlertException;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.validation.Valid;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Optional;
+import tech.jhipster.web.util.HeaderUtil;
+import tech.jhipster.web.util.ResponseUtil;
 
 /**
  * REST controller for managing {@link me.tisana.miniblog.domain.Author}.
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/authors")
 public class AuthorResource {
 
-    private final Logger log = LoggerFactory.getLogger(AuthorResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AuthorResource.class);
 
     private static final String ENTITY_NAME = "miniBlogAuthor";
 
@@ -35,29 +35,11 @@ public class AuthorResource {
 
     private final AuthorService authorService;
 
-    public AuthorResource(AuthorService authorService) {
+    private final AuthorRepository authorRepository;
+
+    public AuthorResource(AuthorService authorService, AuthorRepository authorRepository) {
         this.authorService = authorService;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<AuthorDTO> regsiter(@RequestBody AuthorDTO authorDTO) throws URISyntaxException {
-        log.debug("REST request to save Author : {}", authorDTO);
-        if (authorDTO.getId() != null) {
-            throw new BadRequestAlertException("A new author cannot already have an ID", ENTITY_NAME, "idexists");
-        }
-
-        if (StringUtils.isEmpty(authorDTO.getUsername())) {
-            throw new BadRequestAlertException("Author name cannot be blank", ENTITY_NAME, "duplicate_name");
-        }
-
-        if(StringUtils.isEmpty(authorDTO.getPassword())) {
-            authorDTO.setPassword(RandomStringUtils.random(12, authorDTO.getUsername()));
-        }
-
-        AuthorDTO result = authorService.save(authorDTO);
-        return ResponseEntity.created(new URI("/api/authors/" + result.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
-            .body(result);
+        this.authorRepository = authorRepository;
     }
 
     /**
@@ -67,37 +49,85 @@ public class AuthorResource {
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and with body the new authorDTO, or with status {@code 400 (Bad Request)} if the author has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PostMapping("/authors")
+    @PostMapping("")
     public ResponseEntity<AuthorDTO> createAuthor(@Valid @RequestBody AuthorDTO authorDTO) throws URISyntaxException {
-        log.debug("REST request to save Author : {}", authorDTO);
+        LOG.debug("REST request to save Author : {}", authorDTO);
         if (authorDTO.getId() != null) {
             throw new BadRequestAlertException("A new author cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        AuthorDTO result = authorService.save(authorDTO);
-        return ResponseEntity.created(new URI("/api/authors/" + result.getId()))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
-            .body(result);
+        authorDTO = authorService.save(authorDTO);
+        return ResponseEntity.created(new URI("/api/authors/" + authorDTO.getId()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, authorDTO.getId().toString()))
+            .body(authorDTO);
     }
 
     /**
-     * {@code PUT  /authors} : Updates an existing author.
+     * {@code PUT  /authors/:id} : Updates an existing author.
      *
+     * @param id the id of the authorDTO to save.
      * @param authorDTO the authorDTO to update.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated authorDTO,
      * or with status {@code 400 (Bad Request)} if the authorDTO is not valid,
      * or with status {@code 500 (Internal Server Error)} if the authorDTO couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
-    @PutMapping("/authors")
-    public ResponseEntity<AuthorDTO> updateAuthor(@Valid @RequestBody AuthorDTO authorDTO) throws URISyntaxException {
-        log.debug("REST request to update Author : {}", authorDTO);
+    @PutMapping("/{id}")
+    public ResponseEntity<AuthorDTO> updateAuthor(
+        @PathVariable(value = "id", required = false) final Long id,
+        @Valid @RequestBody AuthorDTO authorDTO
+    ) throws URISyntaxException {
+        LOG.debug("REST request to update Author : {}, {}", id, authorDTO);
         if (authorDTO.getId() == null) {
             throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
         }
-        AuthorDTO result = authorService.save(authorDTO);
+        if (!Objects.equals(id, authorDTO.getId())) {
+            throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
+        }
+
+        if (!authorRepository.existsById(id)) {
+            throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
+        }
+
+        authorDTO = authorService.update(authorDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, authorDTO.getId().toString()))
-            .body(result);
+            .body(authorDTO);
+    }
+
+    /**
+     * {@code PATCH  /authors/:id} : Partial updates given fields of an existing author, field will ignore if it is null
+     *
+     * @param id the id of the authorDTO to save.
+     * @param authorDTO the authorDTO to update.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated authorDTO,
+     * or with status {@code 400 (Bad Request)} if the authorDTO is not valid,
+     * or with status {@code 404 (Not Found)} if the authorDTO is not found,
+     * or with status {@code 500 (Internal Server Error)} if the authorDTO couldn't be updated.
+     * @throws URISyntaxException if the Location URI syntax is incorrect.
+     */
+    @PatchMapping(value = "/{id}", consumes = { "application/json", "application/merge-patch+json" })
+    public ResponseEntity<AuthorDTO> partialUpdateAuthor(
+        @PathVariable(value = "id", required = false) final Long id,
+        @NotNull @RequestBody AuthorDTO authorDTO
+    ) throws URISyntaxException {
+        LOG.debug("REST request to partial update Author partially : {}, {}", id, authorDTO);
+        if (authorDTO.getId() == null) {
+            throw new BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull");
+        }
+        if (!Objects.equals(id, authorDTO.getId())) {
+            throw new BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid");
+        }
+
+        if (!authorRepository.existsById(id)) {
+            throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
+        }
+
+        Optional<AuthorDTO> result = authorService.partialUpdate(authorDTO);
+
+        return ResponseUtil.wrapOrNotFound(
+            result,
+            HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, authorDTO.getId().toString())
+        );
     }
 
     /**
@@ -105,9 +135,9 @@ public class AuthorResource {
      *
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of authors in body.
      */
-    @GetMapping("/authors")
+    @GetMapping("")
     public List<AuthorDTO> getAllAuthors() {
-        log.debug("REST request to get all Authors");
+        LOG.debug("REST request to get all Authors");
         return authorService.findAll();
     }
 
@@ -117,9 +147,9 @@ public class AuthorResource {
      * @param id the id of the authorDTO to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the authorDTO, or with status {@code 404 (Not Found)}.
      */
-    @GetMapping("/authors/{id}")
-    public ResponseEntity<AuthorDTO> getAuthor(@PathVariable Long id) {
-        log.debug("REST request to get Author : {}", id);
+    @GetMapping("/{id}")
+    public ResponseEntity<AuthorDTO> getAuthor(@PathVariable("id") Long id) {
+        LOG.debug("REST request to get Author : {}", id);
         Optional<AuthorDTO> authorDTO = authorService.findOne(id);
         return ResponseUtil.wrapOrNotFound(authorDTO);
     }
@@ -130,10 +160,12 @@ public class AuthorResource {
      * @param id the id of the authorDTO to delete.
      * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
      */
-    @DeleteMapping("/authors/{id}")
-    public ResponseEntity<Void> deleteAuthor(@PathVariable Long id) {
-        log.debug("REST request to delete Author : {}", id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAuthor(@PathVariable("id") Long id) {
+        LOG.debug("REST request to delete Author : {}", id);
         authorService.delete(id);
-        return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString())).build();
+        return ResponseEntity.noContent()
+            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
+            .build();
     }
 }

@@ -1,70 +1,61 @@
 package me.tisana.miniblog.config;
 
-import me.tisana.miniblog.security.AuthoritiesConstants;
-import me.tisana.miniblog.security.jwt.JWTConfigurer;
-import me.tisana.miniblog.security.jwt.TokenProvider;
-import org.springframework.context.annotation.Import;
+import static org.springframework.security.config.Customizer.withDefaults;
+
+import me.tisana.miniblog.security.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
-import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+import tech.jhipster.config.JHipsterProperties;
 
-@EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
-@Import(SecurityProblemSupport.class)
-public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+@Configuration
+@EnableMethodSecurity(securedEnabled = true)
+public class SecurityConfiguration {
 
-    private final TokenProvider tokenProvider;
-    private final SecurityProblemSupport problemSupport;
+    private final JHipsterProperties jHipsterProperties;
 
-    public SecurityConfiguration(TokenProvider tokenProvider, SecurityProblemSupport problemSupport) {
-        this.tokenProvider = tokenProvider;
-        this.problemSupport = problemSupport;
+    public SecurityConfiguration(JHipsterProperties jHipsterProperties) {
+        this.jHipsterProperties = jHipsterProperties;
     }
 
-    @Override
-    public void configure(HttpSecurity http) throws Exception {
-        // @formatter:off
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, MvcRequestMatcher.Builder mvc) throws Exception {
         http
-            .csrf()
-            .disable()
-            .exceptionHandling()
-            .authenticationEntryPoint(problemSupport)
-            .accessDeniedHandler(problemSupport)
-            .and()
-            .headers()
-            .contentSecurityPolicy("default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:")
-            .and()
-            .referrerPolicy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
-            .and()
-            .featurePolicy("geolocation 'none'; midi 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; fullscreen 'self'; payment 'none'")
-            .and()
-            .frameOptions()
-            .deny()
-            .and()
-            .sessionManagement()
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .authorizeRequests()
-            .antMatchers("/api/authenticate").permitAll()
-//            .antMatchers(HttpMethod.GET, "/api/cards/**").permitAll()
-            .antMatchers("/api/cards/**").permitAll()
-            .antMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-            .antMatchers("/api/**").authenticated()
-            .antMatchers("/management/health").permitAll()
-            .antMatchers("/management/info").permitAll()
-            .antMatchers("/management/prometheus").permitAll()
-            .antMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
-        .and()
-            .apply(securityConfigurerAdapter());
-        // @formatter:on
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(authz ->
+                // prettier-ignore
+                authz
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/authenticate")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authenticate")).permitAll()
+                    .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
+                    .requestMatchers(mvc.pattern("/api/**")).authenticated()
+                    .requestMatchers(mvc.pattern("/v3/api-docs/**")).hasAuthority(AuthoritiesConstants.ADMIN)
+                    .requestMatchers(mvc.pattern("/management/health")).permitAll()
+                    .requestMatchers(mvc.pattern("/management/health/**")).permitAll()
+                    .requestMatchers(mvc.pattern("/management/info")).permitAll()
+                    .requestMatchers(mvc.pattern("/management/prometheus")).permitAll()
+                    .requestMatchers(mvc.pattern("/management/**")).hasAuthority(AuthoritiesConstants.ADMIN)
+            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions ->
+                exceptions
+                    .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
+                    .accessDeniedHandler(new BearerTokenAccessDeniedHandler())
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()));
+        return http.build();
     }
 
-    private JWTConfigurer securityConfigurerAdapter() {
-        return new JWTConfigurer(tokenProvider);
+    @Bean
+    MvcRequestMatcher.Builder mvc(HandlerMappingIntrospector introspector) {
+        return new MvcRequestMatcher.Builder(introspector);
     }
 }

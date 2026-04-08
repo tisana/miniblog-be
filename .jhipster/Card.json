@@ -7,14 +7,16 @@
       "otherEntityName": "author",
       "relationshipType": "many-to-one",
       "otherEntityField": "username",
-      "otherEntityRelationshipName": "card"
+      "otherEntityRelationshipName": "card",
+      "relationshipSide": "right"
     },
     {
       "relationshipName": "category",
       "otherEntityName": "category",
       "relationshipType": "many-to-one",
       "otherEntityField": "name",
-      "otherEntityRelationshipName": "card"
+      "otherEntityRelationshipName": "card",
+      "relationshipSide": "right"
     }
   ],
   "fields": [
@@ -35,12 +37,16 @@
   ],
   "changelogDate": "20200829074240",
   "dto": "mapstruct",
-  "searchEngine": false,
+  "searchEngine": "no",
   "service": "serviceClass",
   "entityTableName": "card",
   "databaseType": "sql",
   "readOnly": false,
   "jpaMetamodelFiltering": false,
   "pagination": "infinite-scroll",
-  "microserviceName": "miniBlog"
+  "microserviceName": "miniBlog",
+  "annotations": {
+    "changelogDate": "20200829074240"
+  },
+  "name": "Card"
 }
