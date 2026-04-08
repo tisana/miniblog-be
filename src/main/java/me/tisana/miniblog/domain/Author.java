@@ -1,12 +1,13 @@
 package me.tisana.miniblog.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-
-import javax.persistence.*;
-import javax.validation.constraints.*;
-
-import java.io.Serializable;
 
 /**
  * A Author.
@@ -14,6 +15,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "author")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@SuppressWarnings("common-java:DuplicatedBlocks")
 public class Author implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -21,6 +23,7 @@ public class Author implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
+    @Column(name = "id")
     private Long id;
 
     @NotNull
@@ -32,9 +35,20 @@ public class Author implements Serializable {
     @Column(name = "password", nullable = false)
     private String password;
 
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "author")
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonIgnoreProperties(value = { "author", "category" }, allowSetters = true)
+    private Set<Card> cards = new HashSet<>();
+
     // jhipster-needle-entity-add-field - JHipster will add fields here
+
     public Long getId() {
-        return id;
+        return this.id;
+    }
+
+    public Author id(Long id) {
+        this.setId(id);
+        return this;
     }
 
     public void setId(Long id) {
@@ -42,11 +56,11 @@ public class Author implements Serializable {
     }
 
     public String getUsername() {
-        return username;
+        return this.username;
     }
 
     public Author username(String username) {
-        this.username = username;
+        this.setUsername(username);
         return this;
     }
 
@@ -55,17 +69,49 @@ public class Author implements Serializable {
     }
 
     public String getPassword() {
-        return password;
+        return this.password;
     }
 
     public Author password(String password) {
-        this.password = password;
+        this.setPassword(password);
         return this;
     }
 
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public Set<Card> getCards() {
+        return this.cards;
+    }
+
+    public void setCards(Set<Card> cards) {
+        if (this.cards != null) {
+            this.cards.forEach(i -> i.setAuthor(null));
+        }
+        if (cards != null) {
+            cards.forEach(i -> i.setAuthor(this));
+        }
+        this.cards = cards;
+    }
+
+    public Author cards(Set<Card> cards) {
+        this.setCards(cards);
+        return this;
+    }
+
+    public Author addCard(Card card) {
+        this.cards.add(card);
+        card.setAuthor(this);
+        return this;
+    }
+
+    public Author removeCard(Card card) {
+        this.cards.remove(card);
+        card.setAuthor(null);
+        return this;
+    }
+
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     @Override
@@ -76,12 +122,13 @@ public class Author implements Serializable {
         if (!(o instanceof Author)) {
             return false;
         }
-        return id != null && id.equals(((Author) o).id);
+        return getId() != null && getId().equals(((Author) o).getId());
     }
 
     @Override
     public int hashCode() {
-        return 31;
+        // see https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/
+        return getClass().hashCode();
     }
 
     // prettier-ignore

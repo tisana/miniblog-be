@@ -4,7 +4,7 @@
       "packageName": "me.tisana.miniblog",
       "nativeLanguage": "en"
     },
-    "jhipsterVersion": "6.10.5",
+    "jhipsterVersion": "8.11.0",
     "applicationType": "microservice",
     "baseName": "miniBlog",
     "packageName": "me.tisana.miniblog",
@@ -37,6 +37,10 @@
     "blueprints": [],
     "skipClient": true,
     "skipUserManagement": true,
-    "lastLiquibaseTimestamp": 1598687597000
+    "lastLiquibaseTimestamp": 1598687597000,
+    "monorepository": true,
+    "skipCommitHook": true,
+    "feignClient": true,
+    "entities": ["Author", "Card", "Category"]
   }
 }

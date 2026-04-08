@@ -1,13 +1,14 @@
 package me.tisana.miniblog.service.dto;
 
-import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
-import me.tisana.miniblog.web.rest.TestUtil;
 
-public class CardDTOTest {
+import me.tisana.miniblog.web.rest.TestUtil;
+import org.junit.jupiter.api.Test;
+
+class CardDTOTest {
 
     @Test
-    public void dtoEqualsVerifier() throws Exception {
+    void dtoEqualsVerifier() throws Exception {
         TestUtil.equalsVerifier(CardDTO.class);
         CardDTO cardDTO1 = new CardDTO();
         cardDTO1.setId(1L);

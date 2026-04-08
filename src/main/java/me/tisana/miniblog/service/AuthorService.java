@@ -1,5 +1,9 @@
 package me.tisana.miniblog.service;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import me.tisana.miniblog.domain.Author;
 import me.tisana.miniblog.repository.AuthorRepository;
 import me.tisana.miniblog.service.dto.AuthorDTO;
@@ -9,19 +13,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 /**
- * Service Implementation for managing {@link Author}.
+ * Service Implementation for managing {@link me.tisana.miniblog.domain.Author}.
  */
 @Service
 @Transactional
 public class AuthorService {
 
-    private final Logger log = LoggerFactory.getLogger(AuthorService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AuthorService.class);
 
     private final AuthorRepository authorRepository;
 
@@ -39,10 +38,43 @@ public class AuthorService {
      * @return the persisted entity.
      */
     public AuthorDTO save(AuthorDTO authorDTO) {
-        log.debug("Request to save Author : {}", authorDTO);
+        LOG.debug("Request to save Author : {}", authorDTO);
         Author author = authorMapper.toEntity(authorDTO);
         author = authorRepository.save(author);
         return authorMapper.toDto(author);
+    }
+
+    /**
+     * Update a author.
+     *
+     * @param authorDTO the entity to save.
+     * @return the persisted entity.
+     */
+    public AuthorDTO update(AuthorDTO authorDTO) {
+        LOG.debug("Request to update Author : {}", authorDTO);
+        Author author = authorMapper.toEntity(authorDTO);
+        author = authorRepository.save(author);
+        return authorMapper.toDto(author);
+    }
+
+    /**
+     * Partially update a author.
+     *
+     * @param authorDTO the entity to update partially.
+     * @return the persisted entity.
+     */
+    public Optional<AuthorDTO> partialUpdate(AuthorDTO authorDTO) {
+        LOG.debug("Request to partially update Author : {}", authorDTO);
+
+        return authorRepository
+            .findById(authorDTO.getId())
+            .map(existingAuthor -> {
+                authorMapper.partialUpdate(existingAuthor, authorDTO);
+
+                return existingAuthor;
+            })
+            .map(authorRepository::save)
+            .map(authorMapper::toDto);
     }
 
     /**
@@ -52,12 +84,9 @@ public class AuthorService {
      */
     @Transactional(readOnly = true)
     public List<AuthorDTO> findAll() {
-        log.debug("Request to get all Authors");
-        return authorRepository.findAll().stream()
-            .map(authorMapper::toDto)
-            .collect(Collectors.toCollection(LinkedList::new));
+        LOG.debug("Request to get all Authors");
+        return authorRepository.findAll().stream().map(authorMapper::toDto).collect(Collectors.toCollection(LinkedList::new));
     }
-
 
     /**
      * Get one author by id.
@@ -67,21 +96,8 @@ public class AuthorService {
      */
     @Transactional(readOnly = true)
     public Optional<AuthorDTO> findOne(Long id) {
-        log.debug("Request to get Author : {}", id);
-        return authorRepository.findById(id)
-            .map(authorMapper::toDto);
-    }
-
-    /**
-     * Get one author by username.
-     *
-     * @param username the username of the entity.
-     * @return the entity.
-     */
-    @Transactional(readOnly = true)
-    public Author findOneByUsername(String username) {
-        log.debug("Request to get Author : {}", username);
-        return authorRepository.findOneByUsername(username);
+        LOG.debug("Request to get Author : {}", id);
+        return authorRepository.findById(id).map(authorMapper::toDto);
     }
 
     /**
@@ -90,7 +106,7 @@ public class AuthorService {
      * @param id the id of the entity.
      */
     public void delete(Long id) {
-        log.debug("Request to delete Author : {}", id);
+        LOG.debug("Request to delete Author : {}", id);
         authorRepository.deleteById(id);
     }
 }

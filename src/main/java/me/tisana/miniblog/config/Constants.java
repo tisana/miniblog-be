@@ -5,8 +5,8 @@ package me.tisana.miniblog.config;
  */
 public final class Constants {
 
-    public static final String SYSTEM_ACCOUNT = "system";
+    public static final String SYSTEM = "system";
+    public static final String DEFAULT_LANGUAGE = "en";
 
-    private Constants() {
-    }
+    private Constants() {}
 }

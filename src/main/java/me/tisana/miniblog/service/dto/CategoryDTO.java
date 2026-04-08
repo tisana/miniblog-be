@@ -1,19 +1,20 @@
 package me.tisana.miniblog.service.dto;
 
-import javax.validation.constraints.*;
+import jakarta.validation.constraints.*;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * A DTO for the {@link me.tisana.miniblog.domain.Category} entity.
  */
+@SuppressWarnings("common-java:DuplicatedBlocks")
 public class CategoryDTO implements Serializable {
-    
+
     private Long id;
 
     @NotNull
     private String name;
 
-    
     public Long getId() {
         return id;
     }
@@ -39,12 +40,16 @@ public class CategoryDTO implements Serializable {
             return false;
         }
 
-        return id != null && id.equals(((CategoryDTO) o).id);
+        CategoryDTO categoryDTO = (CategoryDTO) o;
+        if (this.id == null) {
+            return false;
+        }
+        return Objects.equals(this.id, categoryDTO.id);
     }
 
     @Override
     public int hashCode() {
-        return 31;
+        return Objects.hash(this.id);
     }
 
     // prettier-ignore

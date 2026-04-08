@@ -1,22 +1,24 @@
 package me.tisana.miniblog.service.mapper;
 
+import static me.tisana.miniblog.domain.CategoryAsserts.*;
+import static me.tisana.miniblog.domain.CategoryTestSamples.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
 
-public class CategoryMapperTest {
+class CategoryMapperTest {
 
     private CategoryMapper categoryMapper;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         categoryMapper = new CategoryMapperImpl();
     }
 
     @Test
-    public void testEntityFromId() {
-        Long id = 1L;
-        assertThat(categoryMapper.fromId(id).getId()).isEqualTo(id);
-        assertThat(categoryMapper.fromId(null)).isNull();
+    void shouldConvertToDtoAndBack() {
+        var expected = getCategorySample1();
+        var actual = categoryMapper.toEntity(categoryMapper.toDto(expected));
+        assertCategoryAllPropertiesEquals(expected, actual);
     }
 }
