@@ -27,7 +27,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {
         http
-            .csrf(csrf -> csrf.ignoringRequestMatchers(mvc.pattern("/api/**")))
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
             .authorizeHttpRequests(authz ->
                 // prettier-ignore
                 authz
