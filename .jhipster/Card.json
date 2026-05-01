@@ -1,24 +1,12 @@
 {
-  "fluentMethods": true,
+  "annotations": {
+    "changelogDate": "20200829074240"
+  },
+  "changelogDate": "20200829074240",
   "clientRootFolder": "miniBlog",
-  "relationships": [
-    {
-      "relationshipName": "author",
-      "otherEntityName": "author",
-      "relationshipType": "many-to-one",
-      "otherEntityField": "username",
-      "otherEntityRelationshipName": "card",
-      "relationshipSide": "right"
-    },
-    {
-      "relationshipName": "category",
-      "otherEntityName": "category",
-      "relationshipType": "many-to-one",
-      "otherEntityField": "name",
-      "otherEntityRelationshipName": "card",
-      "relationshipSide": "right"
-    }
-  ],
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "entityTableName": "card",
   "fields": [
     {
       "fieldName": "name",
@@ -35,18 +23,30 @@
       "fieldType": "String"
     }
   ],
-  "changelogDate": "20200829074240",
-  "dto": "mapstruct",
-  "searchEngine": "no",
-  "service": "serviceClass",
-  "entityTableName": "card",
-  "databaseType": "sql",
-  "readOnly": false,
+  "fluentMethods": true,
   "jpaMetamodelFiltering": false,
-  "pagination": "infinite-scroll",
   "microserviceName": "miniBlog",
-  "annotations": {
-    "changelogDate": "20200829074240"
-  },
-  "name": "Card"
+  "name": "Card",
+  "pagination": "infinite-scroll",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityField": "username",
+      "otherEntityName": "author",
+      "otherEntityRelationshipName": "card",
+      "relationshipName": "author",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-one"
+    },
+    {
+      "otherEntityField": "name",
+      "otherEntityName": "category",
+      "otherEntityRelationshipName": "card",
+      "relationshipName": "category",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
 }
