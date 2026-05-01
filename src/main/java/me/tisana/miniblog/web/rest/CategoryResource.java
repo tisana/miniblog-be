@@ -30,7 +30,7 @@ public class CategoryResource {
 
     private static final String ENTITY_NAME = "miniBlogCategory";
 
-    @Value("${jhipster.clientApp.name}")
+    @Value("${jhipster.clientApp.name:miniBlog}")
     private String applicationName;
 
     private final CategoryService categoryService;
@@ -131,9 +131,9 @@ public class CategoryResource {
     }
 
     /**
-     * {@code GET  /categories} : get all the categories.
+     * {@code GET  /categories} : get all the Categories.
      *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of categories in body.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of Categories in body.
      */
     @GetMapping("")
     public List<CategoryDTO> getAllCategories() {

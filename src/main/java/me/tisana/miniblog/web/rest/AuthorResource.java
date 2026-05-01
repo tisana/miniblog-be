@@ -30,7 +30,7 @@ public class AuthorResource {
 
     private static final String ENTITY_NAME = "miniBlogAuthor";
 
-    @Value("${jhipster.clientApp.name}")
+    @Value("${jhipster.clientApp.name:miniBlog}")
     private String applicationName;
 
     private final AuthorService authorService;
@@ -131,9 +131,9 @@ public class AuthorResource {
     }
 
     /**
-     * {@code GET  /authors} : get all the authors.
+     * {@code GET  /authors} : get all the Authors.
      *
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of authors in body.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of Authors in body.
      */
     @GetMapping("")
     public List<AuthorDTO> getAllAuthors() {
