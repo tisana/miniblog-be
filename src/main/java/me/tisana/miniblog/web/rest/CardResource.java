@@ -35,7 +35,7 @@ public class CardResource {
 
     private static final String ENTITY_NAME = "miniBlogCard";
 
-    @Value("${jhipster.clientApp.name}")
+    @Value("${jhipster.clientApp.name:miniBlog}")
     private String applicationName;
 
     private final CardService cardService;
@@ -136,11 +136,11 @@ public class CardResource {
     }
 
     /**
-     * {@code GET  /cards} : get all the cards.
+     * {@code GET  /cards} : get all the Cards.
      *
      * @param pageable the pagination information.
      * @param eagerload flag to eager load entities from relationships (This is applicable for many-to-many).
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of cards in body.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of Cards in body.
      */
     @GetMapping("")
     public ResponseEntity<List<CardDTO>> getAllCards(
