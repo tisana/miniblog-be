@@ -1,7 +1,12 @@
 {
-  "fluentMethods": true,
+  "annotations": {
+    "changelogDate": "20200829071101"
+  },
+  "changelogDate": "20200829071101",
   "clientRootFolder": "miniBlog",
-  "relationships": [],
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "entityTableName": "author",
   "fields": [
     {
       "fieldName": "username",
@@ -15,18 +20,13 @@
       "fieldValidateRulesMinlength": "8"
     }
   ],
-  "changelogDate": "20200829071101",
-  "dto": "mapstruct",
-  "searchEngine": "no",
-  "service": "serviceClass",
-  "entityTableName": "author",
-  "databaseType": "sql",
-  "readOnly": false,
+  "fluentMethods": true,
   "jpaMetamodelFiltering": false,
-  "pagination": "no",
   "microserviceName": "miniBlog",
-  "annotations": {
-    "changelogDate": "20200829071101"
-  },
-  "name": "Author"
+  "name": "Author",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [],
+  "searchEngine": "no",
+  "service": "serviceClass"
 }
