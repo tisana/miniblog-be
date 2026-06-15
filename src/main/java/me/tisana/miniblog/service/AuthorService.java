@@ -10,6 +10,7 @@ import me.tisana.miniblog.service.dto.AuthorDTO;
 import me.tisana.miniblog.service.mapper.AuthorMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +27,12 @@ public class AuthorService {
 
     private final AuthorMapper authorMapper;
 
-    public AuthorService(AuthorRepository authorRepository, AuthorMapper authorMapper) {
+    private final PasswordEncoder passwordEncoder;
+
+    public AuthorService(AuthorRepository authorRepository, AuthorMapper authorMapper, PasswordEncoder passwordEncoder) {
         this.authorRepository = authorRepository;
         this.authorMapper = authorMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -40,6 +44,7 @@ public class AuthorService {
     public AuthorDTO save(AuthorDTO authorDTO) {
         LOG.debug("Request to save Author : {}", authorDTO);
         Author author = authorMapper.toEntity(authorDTO);
+        encodePassword(author);
         author = authorRepository.save(author);
         return authorMapper.toDto(author);
     }
@@ -53,6 +58,7 @@ public class AuthorService {
     public AuthorDTO update(AuthorDTO authorDTO) {
         LOG.debug("Request to update Author : {}", authorDTO);
         Author author = authorMapper.toEntity(authorDTO);
+        encodePassword(author);
         author = authorRepository.save(author);
         return authorMapper.toDto(author);
     }
@@ -69,6 +75,7 @@ public class AuthorService {
         return authorRepository
             .findById(authorDTO.getId())
             .map(existingAuthor -> {
+                encodePassword(authorDTO);
                 authorMapper.partialUpdate(existingAuthor, authorDTO);
 
                 return existingAuthor;
@@ -108,5 +115,17 @@ public class AuthorService {
     public void delete(Long id) {
         LOG.debug("Request to delete Author : {}", id);
         authorRepository.deleteById(id);
+    }
+
+    private void encodePassword(Author author) {
+        if (author.getPassword() != null) {
+            author.setPassword(passwordEncoder.encode(author.getPassword()));
+        }
+    }
+
+    private void encodePassword(AuthorDTO authorDTO) {
+        if (authorDTO.getPassword() != null) {
+            authorDTO.setPassword(passwordEncoder.encode(authorDTO.getPassword()));
+        }
     }
 }

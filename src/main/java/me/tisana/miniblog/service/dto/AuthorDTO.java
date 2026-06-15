@@ -1,5 +1,6 @@
 package me.tisana.miniblog.service.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
 import java.util.Objects;
@@ -17,6 +18,7 @@ public class AuthorDTO implements Serializable {
 
     @NotNull
     @Size(min = 8)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     public Long getId() {
@@ -70,7 +72,6 @@ public class AuthorDTO implements Serializable {
         return "AuthorDTO{" +
             "id=" + getId() +
             ", username='" + getUsername() + "'" +
-            ", password='" + getPassword() + "'" +
             "}";
     }
 }

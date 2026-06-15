@@ -139,7 +139,6 @@ public class Author implements Serializable {
         return "Author{" +
             "id=" + getId() +
             ", username='" + getUsername() + "'" +
-            ", password='" + getPassword() + "'" +
             "}";
     }
 }

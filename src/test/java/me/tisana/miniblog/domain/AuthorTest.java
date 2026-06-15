@@ -46,4 +46,11 @@ class AuthorTest {
         assertThat(author.getCards()).doesNotContain(cardBack);
         assertThat(cardBack.getAuthor()).isNull();
     }
+
+    @Test
+    void toStringShouldNotContainPassword() {
+        Author author = new Author().id(1L).username("author").password("secret-password");
+
+        assertThat(author.toString()).doesNotContain("password").doesNotContain("secret-password");
+    }
 }

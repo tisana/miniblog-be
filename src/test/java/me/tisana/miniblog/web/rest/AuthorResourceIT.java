@@ -1,13 +1,13 @@
 package me.tisana.miniblog.web.rest;
 
 import static me.tisana.miniblog.domain.AuthorAsserts.*;
-import static me.tisana.miniblog.web.rest.TestUtil.createUpdateProxyForBean;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.persistence.EntityManager;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -103,11 +103,11 @@ class AuthorResourceIT {
     void createAuthor() throws Exception {
         long databaseSizeBeforeCreate = getRepositoryCount();
         // Create the Author
-        AuthorDTO authorDTO = authorMapper.toDto(author);
         var returnedAuthorDTO = om.readValue(
             restAuthorMockMvc
-                .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(authorDTO)))
+                .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(authorJsonBytes(author)))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.password").doesNotExist())
                 .andReturn()
                 .getResponse()
                 .getContentAsString(),
@@ -117,7 +117,9 @@ class AuthorResourceIT {
         // Validate the Author in the database
         assertIncrementedRepositoryCount(databaseSizeBeforeCreate);
         var returnedAuthor = authorMapper.toEntity(returnedAuthorDTO);
-        assertAuthorUpdatableFieldsEquals(returnedAuthor, getPersistedAuthor(returnedAuthor));
+        var persistedAuthor = getPersistedAuthor(returnedAuthor);
+        assertThat(persistedAuthor.getUsername()).isEqualTo(DEFAULT_USERNAME);
+        assertThat(persistedAuthor.getPassword()).isNotEqualTo(DEFAULT_PASSWORD);
 
         insertedAuthor = returnedAuthor;
     }
@@ -133,7 +135,7 @@ class AuthorResourceIT {
 
         // An entity with an existing ID cannot be created, so this API call must fail
         restAuthorMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(authorDTO)))
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(authorJsonBytes(author)))
             .andExpect(status().isBadRequest());
 
         // Validate the Author in the database
@@ -148,10 +150,8 @@ class AuthorResourceIT {
         author.setUsername(null);
 
         // Create the Author, which fails.
-        AuthorDTO authorDTO = authorMapper.toDto(author);
-
         restAuthorMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(authorDTO)))
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(authorJsonBytes(author)))
             .andExpect(status().isBadRequest());
 
         assertSameRepositoryCount(databaseSizeBeforeTest);
@@ -165,10 +165,8 @@ class AuthorResourceIT {
         author.setPassword(null);
 
         // Create the Author, which fails.
-        AuthorDTO authorDTO = authorMapper.toDto(author);
-
         restAuthorMockMvc
-            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(authorDTO)))
+            .perform(post(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(authorJsonBytes(author)))
             .andExpect(status().isBadRequest());
 
         assertSameRepositoryCount(databaseSizeBeforeTest);
@@ -187,7 +185,7 @@ class AuthorResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(author.getId().intValue())))
             .andExpect(jsonPath("$.[*].username").value(hasItem(DEFAULT_USERNAME)))
-            .andExpect(jsonPath("$.[*].password").value(hasItem(DEFAULT_PASSWORD)));
+            .andExpect(jsonPath("$.[*].password").doesNotExist());
     }
 
     @Test
@@ -203,7 +201,7 @@ class AuthorResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.id").value(author.getId().intValue()))
             .andExpect(jsonPath("$.username").value(DEFAULT_USERNAME))
-            .andExpect(jsonPath("$.password").value(DEFAULT_PASSWORD));
+            .andExpect(jsonPath("$.password").doesNotExist());
     }
 
     @Test
@@ -226,17 +224,19 @@ class AuthorResourceIT {
         // Disconnect from session so that the updates on updatedAuthor are not directly saved in db
         em.detach(updatedAuthor);
         updatedAuthor.username(UPDATED_USERNAME).password(UPDATED_PASSWORD);
-        AuthorDTO authorDTO = authorMapper.toDto(updatedAuthor);
 
         restAuthorMockMvc
             .perform(
-                put(ENTITY_API_URL_ID, authorDTO.getId()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(authorDTO))
+                put(ENTITY_API_URL_ID, updatedAuthor.getId()).contentType(MediaType.APPLICATION_JSON).content(authorJsonBytes(updatedAuthor))
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.password").doesNotExist());
 
         // Validate the Author in the database
         assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertPersistedAuthorToMatchAllProperties(updatedAuthor);
+        var persistedAuthor = getPersistedAuthor(updatedAuthor);
+        assertThat(persistedAuthor.getUsername()).isEqualTo(UPDATED_USERNAME);
+        assertThat(persistedAuthor.getPassword()).isNotEqualTo(UPDATED_PASSWORD);
     }
 
     @Test
@@ -245,13 +245,10 @@ class AuthorResourceIT {
         long databaseSizeBeforeUpdate = getRepositoryCount();
         author.setId(longCount.incrementAndGet());
 
-        // Create the Author
-        AuthorDTO authorDTO = authorMapper.toDto(author);
-
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restAuthorMockMvc
             .perform(
-                put(ENTITY_API_URL_ID, authorDTO.getId()).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(authorDTO))
+                put(ENTITY_API_URL_ID, author.getId()).contentType(MediaType.APPLICATION_JSON).content(authorJsonBytes(author))
             )
             .andExpect(status().isBadRequest());
 
@@ -265,15 +262,12 @@ class AuthorResourceIT {
         long databaseSizeBeforeUpdate = getRepositoryCount();
         author.setId(longCount.incrementAndGet());
 
-        // Create the Author
-        AuthorDTO authorDTO = authorMapper.toDto(author);
-
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restAuthorMockMvc
             .perform(
                 put(ENTITY_API_URL_ID, longCount.incrementAndGet())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(om.writeValueAsBytes(authorDTO))
+                    .content(authorJsonBytes(author))
             )
             .andExpect(status().isBadRequest());
 
@@ -287,12 +281,9 @@ class AuthorResourceIT {
         long databaseSizeBeforeUpdate = getRepositoryCount();
         author.setId(longCount.incrementAndGet());
 
-        // Create the Author
-        AuthorDTO authorDTO = authorMapper.toDto(author);
-
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restAuthorMockMvc
-            .perform(put(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(om.writeValueAsBytes(authorDTO)))
+            .perform(put(ENTITY_API_URL).contentType(MediaType.APPLICATION_JSON).content(authorJsonBytes(author)))
             .andExpect(status().isMethodNotAllowed());
 
         // Validate the Author in the database
@@ -317,14 +308,17 @@ class AuthorResourceIT {
             .perform(
                 patch(ENTITY_API_URL_ID, partialUpdatedAuthor.getId())
                     .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedAuthor))
+                    .content(authorJsonBytes(partialUpdatedAuthor))
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.password").doesNotExist());
 
         // Validate the Author in the database
 
         assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertAuthorUpdatableFieldsEquals(createUpdateProxyForBean(partialUpdatedAuthor, author), getPersistedAuthor(author));
+        var persistedAuthor = getPersistedAuthor(author);
+        assertThat(persistedAuthor.getUsername()).isEqualTo(author.getUsername());
+        assertThat(persistedAuthor.getPassword()).isNotEqualTo(UPDATED_PASSWORD);
     }
 
     @Test
@@ -345,14 +339,17 @@ class AuthorResourceIT {
             .perform(
                 patch(ENTITY_API_URL_ID, partialUpdatedAuthor.getId())
                     .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(partialUpdatedAuthor))
+                    .content(authorJsonBytes(partialUpdatedAuthor))
             )
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.password").doesNotExist());
 
         // Validate the Author in the database
 
         assertSameRepositoryCount(databaseSizeBeforeUpdate);
-        assertAuthorUpdatableFieldsEquals(partialUpdatedAuthor, getPersistedAuthor(partialUpdatedAuthor));
+        var persistedAuthor = getPersistedAuthor(partialUpdatedAuthor);
+        assertThat(persistedAuthor.getUsername()).isEqualTo(UPDATED_USERNAME);
+        assertThat(persistedAuthor.getPassword()).isNotEqualTo(UPDATED_PASSWORD);
     }
 
     @Test
@@ -361,15 +358,12 @@ class AuthorResourceIT {
         long databaseSizeBeforeUpdate = getRepositoryCount();
         author.setId(longCount.incrementAndGet());
 
-        // Create the Author
-        AuthorDTO authorDTO = authorMapper.toDto(author);
-
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         restAuthorMockMvc
             .perform(
-                patch(ENTITY_API_URL_ID, authorDTO.getId())
+                patch(ENTITY_API_URL_ID, author.getId())
                     .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(authorDTO))
+                    .content(authorJsonBytes(author))
             )
             .andExpect(status().isBadRequest());
 
@@ -383,15 +377,12 @@ class AuthorResourceIT {
         long databaseSizeBeforeUpdate = getRepositoryCount();
         author.setId(longCount.incrementAndGet());
 
-        // Create the Author
-        AuthorDTO authorDTO = authorMapper.toDto(author);
-
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restAuthorMockMvc
             .perform(
                 patch(ENTITY_API_URL_ID, longCount.incrementAndGet())
                     .contentType("application/merge-patch+json")
-                    .content(om.writeValueAsBytes(authorDTO))
+                    .content(authorJsonBytes(author))
             )
             .andExpect(status().isBadRequest());
 
@@ -405,12 +396,9 @@ class AuthorResourceIT {
         long databaseSizeBeforeUpdate = getRepositoryCount();
         author.setId(longCount.incrementAndGet());
 
-        // Create the Author
-        AuthorDTO authorDTO = authorMapper.toDto(author);
-
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         restAuthorMockMvc
-            .perform(patch(ENTITY_API_URL).contentType("application/merge-patch+json").content(om.writeValueAsBytes(authorDTO)))
+            .perform(patch(ENTITY_API_URL).contentType("application/merge-patch+json").content(authorJsonBytes(author)))
             .andExpect(status().isMethodNotAllowed());
 
         // Validate the Author in the database
@@ -452,6 +440,20 @@ class AuthorResourceIT {
 
     protected Author getPersistedAuthor(Author author) {
         return authorRepository.findById(author.getId()).orElseThrow();
+    }
+
+    private byte[] authorJsonBytes(Author author) throws Exception {
+        ObjectNode json = om.createObjectNode();
+        if (author.getId() != null) {
+            json.put("id", author.getId());
+        }
+        if (author.getUsername() != null) {
+            json.put("username", author.getUsername());
+        }
+        if (author.getPassword() != null) {
+            json.put("password", author.getPassword());
+        }
+        return om.writeValueAsBytes(json);
     }
 
     protected void assertPersistedAuthorToMatchAllProperties(Author expectedAuthor) {
