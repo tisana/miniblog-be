@@ -3,8 +3,8 @@ package me.tisana.miniblog;
 import jakarta.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import me.tisana.miniblog.config.ApplicationProperties;
 import me.tisana.miniblog.config.CRLFLogConverter;
@@ -19,7 +19,7 @@ import org.springframework.core.env.Environment;
 import tech.jhipster.config.DefaultProfileUtil;
 import tech.jhipster.config.JHipsterConstants;
 
-@SpringBootApplication
+@SpringBootApplication()
 @EnableConfigurationProperties({ LiquibaseProperties.class, ApplicationProperties.class })
 public class MiniBlogApp {
 
@@ -40,7 +40,7 @@ public class MiniBlogApp {
      */
     @PostConstruct
     public void initApplication() {
-        Collection<String> activeProfiles = Arrays.asList(env.getActiveProfiles());
+        Collection<String> activeProfiles = List.of(env.getActiveProfiles());
         if (
             activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) &&
             activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)

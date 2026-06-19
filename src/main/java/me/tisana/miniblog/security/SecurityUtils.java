@@ -1,6 +1,6 @@
 package me.tisana.miniblog.security;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.springframework.security.core.Authentication;
@@ -52,9 +52,16 @@ public final class SecurityUtils {
      */
     public static Optional<String> getCurrentUserJWT() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
-        return Optional.ofNullable(securityContext.getAuthentication())
-            .filter(authentication -> authentication.getCredentials() instanceof String)
-            .map(authentication -> (String) authentication.getCredentials());
+        return Optional.ofNullable(securityContext.getAuthentication()).map(SecurityUtils::extractCredentials);
+    }
+
+    private static String extractCredentials(Authentication authentication) {
+        if (authentication.getCredentials() instanceof String token) {
+            return token;
+        } else if (authentication.getCredentials() instanceof Jwt jwt) {
+            return jwt.getTokenValue();
+        }
+        return null;
     }
 
     /**
@@ -75,9 +82,7 @@ public final class SecurityUtils {
      */
     public static boolean hasCurrentUserAnyOfAuthorities(String... authorities) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return (
-            authentication != null && getAuthorities(authentication).anyMatch(authority -> Arrays.asList(authorities).contains(authority))
-        );
+        return (authentication != null && getAuthorities(authentication).anyMatch(authority -> List.of(authorities).contains(authority)));
     }
 
     /**
