@@ -1,0 +1,52 @@
+{
+  "annotations": {
+    "changelogDate": "20200829074240"
+  },
+  "changelogDate": "20200829074240",
+  "clientRootFolder": "miniBlog",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "entityTableName": "card",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "Status",
+      "fieldValues": "DRAFT,PUBLISH"
+    },
+    {
+      "fieldName": "content",
+      "fieldType": "String"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "miniBlog",
+  "name": "Card",
+  "pagination": "infinite-scroll",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityField": "username",
+      "otherEntityName": "author",
+      "otherEntityRelationshipName": "card",
+      "relationshipName": "author",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-one"
+    },
+    {
+      "otherEntityField": "name",
+      "otherEntityName": "category",
+      "otherEntityRelationshipName": "card",
+      "relationshipName": "category",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

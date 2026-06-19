@@ -1,0 +1,32 @@
+{
+  "annotations": {
+    "changelogDate": "20200829071101"
+  },
+  "changelogDate": "20200829071101",
+  "clientRootFolder": "miniBlog",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "entityTableName": "author",
+  "fields": [
+    {
+      "fieldName": "username",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique"]
+    },
+    {
+      "fieldName": "password",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "minlength"],
+      "fieldValidateRulesMinlength": "8"
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "miniBlog",
+  "name": "Author",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

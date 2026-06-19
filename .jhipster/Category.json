@@ -1,0 +1,26 @@
+{
+  "annotations": {
+    "changelogDate": "20200829075317"
+  },
+  "changelogDate": "20200829075317",
+  "clientRootFolder": "miniBlog",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "entityTableName": "category",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique"]
+    }
+  ],
+  "fluentMethods": true,
+  "jpaMetamodelFiltering": false,
+  "microserviceName": "miniBlog",
+  "name": "Category",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}
