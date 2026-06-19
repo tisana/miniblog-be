@@ -2,7 +2,7 @@
 name: miniblog
 services:
   postgresql:
-    image: postgres:18.3
+    image: postgres:18.4
     # volumes:
     #   - ~/volumes/jhipster/miniBlog/postgresql/:/var/lib/postgresql/data/
     environment:
