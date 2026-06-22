@@ -1,19 +1,14 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.209.6/containers/java
+// https://github.com/devcontainers/images/tree/main/src/java
 {
   "name": "MiniBlog",
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-      // Update the VARIANT arg to pick a Java version: 17, 19
-      // Append -bullseye or -buster to pin to an OS version.
+      // JHipster 9.1.0 requires Java 21+.
+      // Append -bookworm or -bullseye to pin to an OS version.
       // Use the -bullseye variants on local arm64/Apple Silicon.
-      "VARIANT": "21-bullseye",
-      // Options
-      // maven and gradle wrappers are used by default, we don't need them installed globally
-      // "INSTALL_MAVEN": "true",
-      // "INSTALL_GRADLE": "false",
-      "NODE_VERSION": "24.16.0"
+      "VARIANT": "21-bookworm"
     }
   },
 
@@ -21,7 +16,7 @@
     "vscode": {
       // Set *default* container specific settings.json values on container create.
       "settings": {
-        "java.jdt.ls.java.home": "/docker-java-home"
+        "java.jdt.ls.java.home": "/usr/local/sdkman/candidates/java/current"
       },
 
       // Add the IDs of extensions you want installed when the container is created.
@@ -43,6 +38,10 @@
   "workspaceFolder": "${localWorkspaceFolder}",
 
   "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      // Match package.json and JHipster 9.1.0 build tooling requirements.
+      "version": "24.16.0"
+    },
     "docker-in-docker": "latest",
     "docker-from-docker": "latest"
   }
