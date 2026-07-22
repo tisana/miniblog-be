@@ -5,7 +5,7 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-      // JHipster 9.1.0 requires Java 21+.
+      // JHipster 9.2.0 requires Java 21+.
       // Append -bookworm or -bullseye to pin to an OS version.
       // Use the -bullseye variants on local arm64/Apple Silicon.
       "VARIANT": "21-bookworm"
@@ -39,8 +39,8 @@
 
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
-      // Match package.json and JHipster 9.1.0 build tooling requirements.
-      "version": "24.16.0"
+      // Match package.json and JHipster 9.2.0 build tooling requirements.
+      "version": "24.18.0"
     },
     "docker-in-docker": "latest",
     "docker-from-docker": "latest"
