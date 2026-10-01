@@ -19,6 +19,10 @@ logging:
     tech.jhipster: DEBUG
     org.hibernate.SQL: DEBUG
     me.tisana.miniblog: DEBUG
+    javax:
+      management:
+        remote:
+          rmi: INFO
 
 management:
   zipkin: # Use the "zipkin" Maven profile to have the Spring Cloud Zipkin dependencies
@@ -47,6 +51,7 @@ spring:
   liquibase:
     # Remove 'faker' if you do not want the sample data to be loaded automatically
     contexts: dev, faker
+    enabled: true
   messages:
     cache-duration: PT1S # 1 second, see the ISO 8601 standard
   thymeleaf:
@@ -70,19 +75,19 @@ jhipster:
       max-entries: 100 # Number of objects in each cache entry
   # CORS is disabled by default on microservices, as you should access them through a gateway.
   # If you want to enable it, please uncomment the configuration below.
-  # cors:
-  #   allowed-origins: "http://localhost:9000,https://localhost:9000"
-  #   allowed-methods: "*"
-  #   allowed-headers: "*"
-  #   exposed-headers: "Authorization,Link,X-Total-Count"
-  #   allow-credentials: true
-  #   max-age: 1800
+  cors:
+     allowed-origins: "http://localhost:4200,http://127.0.0.1:4200,http://127.0.0.1:4205"
+     allowed-methods: "*"
+     allowed-headers: "*"
+     exposed-headers: "Authorization,Link,X-Total-Count"
+     allow-credentials: true
+     max-age: 1800
   security:
     authentication:
       jwt:
-        # Token is valid 24 hours
-        token-validity-in-seconds: 86400
-        token-validity-in-seconds-for-remember-me: 2592000
+        # Local testing tokens are valid 10 hours, including remember-me tokens.
+        token-validity-in-seconds: 36000
+        token-validity-in-seconds-for-remember-me: 36000
   logging:
     use-json-format: false # By default, logs are not in Json format
     logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
@@ -99,4 +104,6 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-# application:
+application:
+  liquibase:
+    async-start: true

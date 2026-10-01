@@ -29,6 +29,27 @@ To start your application in the dev profile, run:
 
 For further instructions on how to develop with JHipster, have a look at [Using JHipster in development][].
 
+### Local testing JWT
+
+This microservice validates JWTs but does not provide a login endpoint. Generate a fresh token valid for **10 hours** with PowerShell:
+
+```powershell
+$token = ./scripts/New-LocalJwt.ps1
+Invoke-RestMethod http://localhost:8081/api/cards -Headers @{ Authorization = "Bearer $token" }
+```
+
+Run the script again whenever you need a new token, or copy it with `./scripts/New-LocalJwt.ps1 | Set-Clipboard`.
+It defaults to subject `admin` with `ROLE_ADMIN` and `ROLE_USER`. To test another identity:
+
+```powershell
+$token = ./scripts/New-LocalJwt.ps1 -Subject local-user -Authorities ROLE_USER
+```
+
+The script uses `JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET` when set, otherwise the sample key loaded by the `dev` profile.
+If your local backend uses a different key, supply the same key through that environment variable or `-Base64Secret`.
+Use these tokens only for local testing. The dev profile's standard and remember-me expiry settings are also 36,000 seconds;
+production settings are unchanged. Existing tokens keep their original expiry; run the script to issue a new one.
+
 ## Building for production
 
 ### Packaging as jar
